@@ -1,6 +1,7 @@
 # Machine Learning Engineer Nanodegree
 ## Capstone Proposal
 Kenneth R. Farr III
+
 July 28th, 2018
 
 ## Predicting Cyber Security Exploits from Vulnerabilities
