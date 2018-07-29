@@ -12,7 +12,6 @@ Cyber Security is the domain that focuses on cost-effectively reducing losses in
 A Cyber security industry standard exists to catalog all known vulnerabilities:  [Common Vulnerabilities and Exposures (CVE)](https://cve.mitre.org/).  The CVE list details every known vulnerability and applies attributes to them, such as level of involvement to exploit, closeness to the asset (physical presence, adjacent network, internet) etc.  These elemental attributes are used to derive a Common Vulnerability Scoring System (CVSS) score.
 
 The anual [Verizon Data Breach Investigations Report (VDBIR)](https://www.verizonenterprise.com/verizon-insights-lab/dbir/) is highly regarded by Cyber Security Professionals and in the 2015 report, page 21 stated that “...we agree with RISK I/O’s finding that a CVE being added to Metasploit is probably the single most reliable predictor of exploitation in the wild”.  [Metasploit DB (MDB)](https://www.rapid7.com/db/modules/) contains publically available exploits and is freely searchable.
-As a member of a Research and Product Development team for a leading Cyber Security Risk Quantification Company, this kind of research (predicting exploits) is both interesting and important to our work.
 
 As a member of a Research and Product Development team for a leading Cyber Security Risk Quantification Company, this kind of research (predicting exploits) is both interesting and important to our work.
 
@@ -20,6 +19,7 @@ As a member of a Research and Product Development team for a leading Cyber Secur
 
 ### Problem Statement
 In a business landscape, prioritizing capital investments is critical to maintaining a competitive advantage.  A portion of all capital expenditures include risk reduction, and cyber security is no exception.  It would be cost-prohibitive for a business to attempt to effectively patch every system against every vulnerability, therefore a business must prioritize which vulnerabilities get patched.  
+
 With over 5000 new CVE entries per year, a business must determine which vulnerabilities affect them, and by predicting which of these 5000 will most likely result in a usable exploit the business can prioritize their patching efforts.
 
 
@@ -27,6 +27,7 @@ With over 5000 new CVE entries per year, a business must determine which vulnera
 As with any prediction algorithm, honest inputs and a ground truth are required for training.  CVE entries will be used as feature inputs with a boolean output to indicate whether or not the CVE ever made it into the Metasploit DB.
 Each CVE entry consists of defining attributes that derive CVSS scores.  The goal is to utilize the CVSS ordinal classification attributes as inputs: Attack Vector, Attack Complexity, Privileges Required, User Interaction, Scope, Confidentiality, Integrity, Availability.
 The entire list of CVEs can be downloaded in an XML format by year, this data will be extracted and placed in a frame along with the CVSS attributes.  Each CVE will be searched in Metasploit (by downloading their database) and an attribute added to indicate whether or not the CVE has an active entry in Metasploit.
+
 Some research will need to be performed to gauge the length of time for a CVE to be added to the CVE list and an entry in the Metasploit DB in order to avoid training on CVEs that have not been given adaquate time to be added to the Metasploit DB.
 
 
@@ -38,6 +39,7 @@ The percentage of CVEs that make it into the Metasploit DB can be used as a rudi
 
 ### Evaluation Metrics
 While reducing both Type 1 and Type 2 errors is important, it is better that the model predicts more False Positives than False Negatives.  As such, the model will be designed to allow for a lower precision with a higher recall.  
+
 The data will be broken into train, cross-validate, and test data sets by selecting randomly.  While perhaps naive, the model will not assume that any earlier CVEs will affect any later CVEs.
 
 
