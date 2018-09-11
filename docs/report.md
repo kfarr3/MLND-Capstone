@@ -125,17 +125,42 @@ One interpretation for this could be that some exploits are being repurposed for
 
 ### Algorithms and Techniques
 
-In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
-- _Are the algorithms you will use, including any default variables/parameters in the project clearly defined?_
-- _Are the techniques to be used thoroughly discussed and justified?_
-- _Is it made clear how the input data or datasets will be handled by the algorithms and techniques chosen?_
+There are many machine-learning techniques available to this problem.  Before deciding which algorithms should be applied, it's best to identify the key characteristics of our problem that will help narrow down the available methods.
+
+* Predictive: we need to predict an output
+* Binary Classification Output: our predictive output is one of two categories, Exploited or Not-Exploited
+* Supervised Learning: we have training data and are trying to predict an output
+* Categorical Input: all input parameters are categorical
+* Biased Data: we have a 60:1 in favor of negative training cases
+* Explainable: when spending money, it's best to have explainable predictions
+
+In the realm of simplest, categorical predictive, and explainable, **Logistic Regression** will be the first algorithm employed, followed by an **Adaboosted Decision Tree**, and finished with a **Support Vector Machine**.  These three were chosen for their flexibility and explainability.
+
+For each method hyperparameters will be tuned using GridSearchCV.  Weighting will be **balanced** for all, which will aid with the biased dataset (60:1 negative:positive).
+
+For Linear Regression the liblinear algorithm will be utilized due to our smaller dataset and lack of multi-classification output.  Regularization will be tuned in the range [0.1, 0.25, 0.5, 0.75, 1, 10, 100, 1000].
+
+For the Ada Boosted Decision Tree the number of estimators will be checked from 1-101.  Both criterion options will be tested: __gini__ and __entropy__.  Additionally, both splitter methods will be tested: __best__ and __random__.
+
+The Support Vector Machine will test different kernels which each have their own parameters.  For the three kernels tested, regularization will consist of [1, 10, 100, 1000].  Degrees [1, 2, 4, 8, 10] will be test for the __poly__ kernel, and gamma [0.001, 0.0001] will be tested for the __rbf__ kernel.
 
 ### Benchmark
 
-In this section, you will need to provide a clearly defined benchmark result or threshold for comparing across performances obtained by your solution. The reasoning behind the benchmark (in the case where it is not an established result) should be discussed. Questions to ask yourself when writing this section:
-- _Has some result or value been provided that acts as a benchmark for measuring performance?_
-- _Is it clear how this result or value was obtained (whether by data or by hypothesis)?_
+For a biased dataset like this one, determining whether to focus on recall or precision was important.  After implementing a simple, default logistic regression, prior to any hyper-parameter tuning, the following threshold graphs were compared.
 
+The following graph charts the tradeoff in False Positives and True Positives.  With a low threshold, more observations are labeled Positive, increasing both our False Positive rate and our True Positive rate.  As the threshold increases so does the False Positive and True Positive rate.  While interesting, it's difficult to gauge what threshold here provides the best gain.
+
+![Accuracy v Precision](img/avp.png)
+
+Next an Receiver Operating Characteristic (ROC) curve was charted.  This provided enough guidance to believe that there is at least some usable predictive power in this data.
+
+![ROC](img/roc.png)
+
+Wanting to reduce the number of False Positives and increase the number of True Positives, one has to focus on recall.  It was deemed best to implement an F-Beta Scoring system where Beta can be selected such that an appropriate recall is achieved.  Prior to hyperparameter tuning for Logistic Regression, a baseline was achieved and scored using the following F-Beta scores: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20.
+
+![F-Beta](img/f-beta.png)
+
+Moving forward with hyperparameter tuning, An F10 Scoring system will be utilized for all training methods.  This intuitively feels like it provides enough recall to reduce False-Positives but retain enough True Positives.  There is no free lunch here.
 
 ## III. Methodology
 
