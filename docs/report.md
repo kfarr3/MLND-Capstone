@@ -28,7 +28,7 @@ With over 5000 new CVE entries per year, a business must determine which vulnera
 
 Utilizing predictive machine-learning algorithms, this research attempts to pinpoint which vulnerabilities are most likely to become usable exploits, helping prioritize which systems need priority patching.  When a vulnerability is discovered and a CVE is created for it, attributes are assigned to the CVE that help determine the type and severity of the vulnerability.  These attributes are:
 
-* _Attack/Access Vector_: Level of access to vulnerable system, includes Physical Access, Local Access, Adjacent Access, or Network (Remote) Access
+* _Attack/Access Vector_: Level of access to vulnerable system, includes Local Access, Adjacent Access, or Network (Remote) Access
 * _Attack Complexity_: Whether or not extenuating circumstances are required to exploit the vulnerability, includes Low or High
 * _Authentication/Privileges Required_: Whether or not access credentials are required before the vulnerability can be exploited, includes None, Low, and High
 * _Confidentiality_: Measures the impact to underlying system if the vulnerability is exploited, includes None, Low, and High
@@ -43,7 +43,7 @@ Much like cancer detection (general direction, not scale) predicting that a vuln
 
 The data will be broken into train and test data sets by selecting randomly, and use k=5 cross-fold validation.  While perhaps naïve, the model will not assume that any earlier CVEs will affect any later CVEs.
 
-Three different methodologies will be tested: linear regression, adaboost/decision tree, and support vector machines.  For adaboost/decision tree and the SVM, hyper-parameter tuning will be employed to determine the best training parameters.
+A baseline Logistic Regression will be ran on the data, while hyperparameter tuning of a Logistic Regression and a Decision Tree classifier will be performed to see if additional accuracy can be extracted.
 
 ## II. Analysis
 
@@ -72,13 +72,13 @@ The above figure shows how the number of reported vulnerabilities has increased 
 
 ![Exploited CVEs per year](img/exploited_cve_bar.png)
 
-The above figure shows the number of exploits per year.  It looks like the number of exploits increases along with the number of vulnerabilities.  Running a correlation test against these datasets shows that there is a strong correlation (0.758) between the number of vulnerabilities in a given year and the number of vulnerabilities.
+The above figure shows the number of exploits per year.  It looks like the number of exploits increases along with the number of vulnerabilities.  Running a correlation test against these datasets shows that there is a strong correlation (0.758) between the number of vulnerabilities in a given year and the number of exploits.  Sussing out which vulnerabilities will turn to exploits is the goal.
 
 ### CVSS Attributes
 
 There are 6 CVSS Attributes that have categorical properties:
 
-* _Attack/Access Vector_: Level of access to vulnerable system, includes **Physical Access**, **Local Access**, **Adjacent Access**, or **Network (Remote) Access**
+* _Attack/Access Vector_: Level of access to vulnerable system, includes **Local Access**, **Adjacent Access**, or **Network (Remote) Access**
 * _Attack Complexity_: Whether or not extenuating circumstances are required to exploit the vulnerability, includes **Low** or **High**
 * _Authentication/Privileges Required_: Whether or not access credentials are required before the vulnerability can be exploited, includes **None**, **Low**, and **High**
 * _Confidentiality_: Measures the impact to underlying system if the vulnerability is exploited, includes **None**, **Low**, and **High**
@@ -90,17 +90,17 @@ Of these 6, only Confidentiality, Integrity, and Availability differ greatly bet
 ![Confidentiality All](img/confidentiality_all.png)
 ![Confidentiality Exploited](img/confidentiality_exploited.png)
 
-For confidentiality, it appears as if **Complete** and **Partial** confidentiality result in more focus for exploits, which seems to reason that attackers are interested in vulnerabilities that produce the most confidentiality loss as opposed to benign exploits.
+For confidentiality, it appears as if **High** and **Low** confidentiality result in more focus for exploits, which seems to reason that attackers are interested in vulnerabilities that produce a confidentiality loss as opposed to benign exploits.
 
 ![Integrity All](img/integrity_all.png)
 ![Integrity Exploited](img/integrity_exploited.png)
 
-In the same vein as confidentiality, exploits targeting vulnerabilities where integrity is listed as **Complete** and **Partial** are also of increased focus.
+In the same vein as confidentiality, exploits targeting vulnerabilities where integrity is listed as **High** are of increased focus.
 
 ![Availability All](img/availability_all.png)
 ![Availability Exploited](img/availability_exploited.png)
 
-The same applies to availability for vulnerabilities listed as **Complete** and **Partial** loss of availability.  Exploits targeting **Complete** and **Partial** losses in the  **CIA** triad (Confidentiality, Availability, and Integrity) categories are not at all surprising.  Vulnerabilities often require extensive resources to exploit, going after vulnerabilities that do not disrupt or product data would be of little use.
+The same applies to availability for vulnerabilities listed as **High** and **Low** loss of availability.  Exploits targeting **High** and **Low** losses in the  **CIA** triad (Confidentiality, Availability, and Integrity) categories are not at all surprising.  Vulnerabilities often require extensive resources to exploit, targeting vulnerabilities that do not disrupt or produce data would be of little use.
 
 ### Exploit Date
 
@@ -127,32 +127,48 @@ One interpretation for this could be that some exploits are being repurposed for
 
 There are many machine-learning techniques available to this problem.  Before deciding which algorithms should be applied, it's best to identify the key characteristics of our problem that will help narrow down the available methods.
 
-* Predictive: we need to predict an output
+* Predictive: need to predict an output
 * Binary Classification Output: our predictive output is one of two categories, Exploited or Not-Exploited
-* Supervised Learning: we have training data and are trying to predict an output
+* Supervised Learning: have training data and are trying to predict an output
 * Categorical Input: all input parameters are categorical
-* Biased Data: we have a 60:1 in favor of negative training cases
+* Biased Data: have a 60:1 in favor of negative training cases
 * Explainable: when spending money, it's best to have explainable predictions
 
-In the realm of simplest, categorical predictive, and explainable, **Logistic Regression** will be the first algorithm employed, followed by an **Adaboosted Decision Tree**, and finished with a **Support Vector Machine**.  These three were chosen for their flexibility and explainability.
+In the realm of simplest, categorical predictive, and explainable, **Logistic Regression** will be the first algorithm employed, initially as a baseline and then with hyperparameter tuning.  Next a Decision Tree will be tuned and hopefully produce higher accuracy than the Logistic Regression method.  A Decision Tree was chosen due to it's level of explainability and flexibility.  Once trained, the branching nodes can be examined to help understand which aspects of CVSS attributes lead to potential exploits.
 
-For each method hyperparameters will be tuned using GridSearchCV.  Weighting will be **balanced** for all, which will aid with the biased dataset (60:1 negative:positive).
+For each method hyperparameters will be tuned using GridSearchCV.  Weighting will be **balanced** when appropriate, which will aid with the biased dataset (60:1 negative:positive).
 
-For Linear Regression the liblinear algorithm will be utilized due to our smaller dataset and lack of multi-classification output.  Regularization will be tuned in the range [0.1, 0.25, 0.5, 0.75, 1, 10, 100, 1000].
+For Logistic Regression the liblinear algorithm will be utilized due to our smaller dataset and lack of multi-classification output.  Regularization will be tuned in the range [0.1, 0.25, 0.5, 0.75, 1, 10, 100, 1000].
 
-For the Ada Boosted Decision Tree the number of estimators will be checked from 1-101.  Both criterion options will be tested: __gini__ and __entropy__.  Additionally, both splitter methods will be tested: __best__ and __random__.
+The Decision Tree has appreciably more hyperparameters to tune than the Logistic Regression method.
 
-The Support Vector Machine will test different kernels which each have their own parameters.  For the three kernels tested, regularization will consist of [1, 10, 100, 1000].  Degrees [1, 2, 4, 8, 10] will be test for the __poly__ kernel, and gamma [0.001, 0.0001] will be tested for the __rbf__ kernel.
+* __criteron__: **gini**, **entropy**
+* __splitter__: **best**, **random**
+* __max_depth__: [**5**, **6**, **7**, **8**, **9**, **10**, **20**, **40**, **80**, **100**]
+* __min_samples_split__: [**2**, **4**, **8**, **16**, **24**, **48**]
+* __min_samples_leaf__: [**1**, **2**, **3**, **4**, **5**, **6**]
+* __max_features__: [**1**, **2**, **3**, **4**, **5**, **6**, **7**]
 
 ### Benchmark
 
-For a biased dataset like this one, determining whether to focus on recall or precision was important.  After implementing a simple, default logistic regression, prior to any hyper-parameter tuning, the following threshold graphs were compared.
+For a biased dataset like this one, determining whether to focus on recall or precision was important. The following image provided By [Walber - Own work, CC BY-SA 4.0](https://commons.wikimedia.org/w/index.php?curid=36926283) is a favorite for visualizing True Positives, False Positives, Precision, and Recall.
 
-The following graph charts the tradeoff in False Positives and True Positives.  With a low threshold, more observations are labeled Positive, increasing both our False Positive rate and our True Positive rate.  As the threshold increases so does the False Positive and True Positive rate.  While interesting, it's difficult to gauge what threshold here provides the best gain.
+<center>
+
+![Error Types](img/Precisionrecall.svg)
+
+</center>
+
+While it would be great if one could increase both precision and accuracy, that's seldom the case.  With such biased data, if I were to model such that every vulnerability was predicted to NOT become and exploit then I'd have a model with **98%** accuracy but **0** recall.  If instead one took a very conservative approach and predicted that every vulnerability will become an exploit then one would have a model that was **1.6%** accurate with a **1.0** recall.  As you can see, neither model is very __good__ at describing the true environment.  
+
+The following graph charts a simple logistic regression with varied thresholds and presents the tradeoff in False Positives and True Positives.  With a low threshold, more observations are labeled Positive, increasing both our False Positive rate and our True Positive rate.  As the threshold increases so does the False Positive and True Positive rate.  While interesting, it's difficult to gauge what threshold here provides the best gain.
 
 ![Accuracy v Precision](img/avp.png)
 
-Next an Receiver Operating Characteristic (ROC) curve was charted.  This provided enough guidance to believe that there is at least some usable predictive power in this data.
+Next an Receiver Operating Characteristic (ROC) curve was charted.  This provided enough guidance to believe that there is at least some usable predictive power in this data.  The ROC graph charts the False Positive Rate against the True Positive Rate.  The True Positive Rate is also Recall.
+
+* The False Positive Rate is calculated by: (# False Positives) / (# False Positives + # True Negatives)
+* The True Positive Rate is calculated by: (# True Negatives) / ( # True Positives + # False Negatives)
 
 ![ROC](img/roc.png)
 
@@ -160,92 +176,144 @@ Wanting to reduce the number of False Positives and increase the number of True 
 
 ![F-Beta](img/f-beta.png)
 
-Moving forward with hyperparameter tuning, An F10 Scoring system will be utilized for all training methods.  This intuitively feels like it provides enough recall to reduce False-Positives but retain enough True Positives.  There is no free lunch here.
+It's interesting that all forms of the F-Beta Score dropped off around 5.5 and 7.5.  Inspecting the different F-Beta scores it appears as if F10 is in the top 3rd and appears to provide a good trade-off to reduce False-Positives but retain enough True Positives.  There is no free lunch here.
 
 ## III. Methodology
 
-_(approx. 3-5 pages)_
-
 ### Data Preprocessing
 
-In this section, all of your preprocessing steps will need to be clearly documented, if any were necessary. From the previous section, any of the abnormalities or characteristics that you identified about the dataset will be addressed and corrected here. Questions to ask yourself when writing this section:
-- _If the algorithms chosen require preprocessing steps like feature selection or feature transformations, have they been properly documented?_
-- _Based on the **Data Exploration** section, if there were abnormalities or characteristics that needed to be addressed, have they been properly corrected?_
-- _If no preprocessing is needed, has it been made clear why?_
+Our incoming data required little pre-processing.  The 6 features were all categorical without any missing data, a rarity.  Essentially the only preprocessing required was extracting the features from the JSON object, organizing them in a dataframe, and performing one-hot encoding such that each of the 'string' based categorical values were transformed into binary indicators.
+
+When extracting the CVEs, there was some mapping done between CVSS v2 and CVSS v3 to ensure that they aligned as closely as possible.  While it would have been possible to utilize the V2 Scoring for everything, it was felt that the V3 scores were of a higher caliber, even when mapped to V2 terminology.
+
+The following tables outline the mappings that occurred
+
+| Confidentiality, Integrity, Availability Mapping V2->V3 |           |
+|--------------------|-----------|
+| NONE               |   NONE    |
+| PARTIAL            |   LOW     |
+| COMPLETE           |   HIGH    |
+
+| Authentication Mapping V2->V3 |           |
+|---------------------|-----------|
+| MULTIPLE            |   HIGH    |
+| SINGLE              |   LOW     |
+| NONE                |   NONE    |
+
+| Complexity Mapping V2->V3 |           |
+|---------------------|-----------|
+| HIGH                |   HIGH    |
+| MEDIUM              |   LOW     |
+| LOW                 |   LOW     |
+
+| Access Mapping V3->V2 |           |
+|---------------------|-----------|
+| NETWORK             | NETWORK     |
+| ADJACENT_NETWORK    |   ADJACENT  |
+| ADJACENT            |   ADJACENT  |
+| LOCAL               |   LOCAL     |
+| PHYSICAL            |   LOCAL     |
+
+Inspecting the correlation heatmap shows that the vast majority of dummy variables are not strongly correlated with each other, which is what one wants.  Variables that are strongly correlated with each other may be redundant and can be removed, simplifying the final model.
+
+![Correlation Heat Map](img/corr_heatmap.png)
+
+The same modifications/one-hot-encoding was performed on the data for all of the techniques tested.
 
 ### Implementation
 
-In this section, the process for which metrics, algorithms, and techniques that you implemented for the given data will need to be clearly documented. It should be abundantly clear how the implementation was carried out, and discussion should be made regarding any complications that occurred during this process. Questions to ask yourself when writing this section:
-- _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
-- _Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?_
-- _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
+For the modelling portion of this project, a separate notebook was constructed for both algorithms employed.  The dataset was read in as a __pandas__ dataframe and and sklearn's **train_test_split** employed to get a training and test dataset.  GridSearch parameters were constructed as mentioned in the previous section.  Cross-Validation was used with a fold of 5 and using the F-Beta10 scorer that was constructed using **make_scorer**.
+
+![Decision Tree Code Snippit](img/dt_run.png)
+
+As one can observe in the above snippit, the coding portion was rather trivial and to the point.  Such is the benefit of modern sklern libraries.
 
 ### Refinement
 
-In this section, you will need to discuss the process of improvement you made upon the algorithms and techniques you used in your implementation. For example, adjusting parameters for certain models to acquire improved solutions would fall under the refinement category. Your initial and final solutions should be reported, as well as any significant intermediate results as necessary. Questions to ask yourself when writing this section:
-- _Has an initial solution been found and clearly reported?_
-- _Is the process of improvement clearly documented, such as what techniques were used?_
-- _Are intermediate and final solutions clearly reported as the process is improved?_
-
+Starting with GridSearch removed any need for refinements.  There was some work (mentioned in the Benchmark section) to determine a proper scoring beta for the F-Score, but other than that, no refinements were made to the algorithm.
 
 ## IV. Results
 
-_(approx. 2-3 pages)_
-
 ### Model Evaluation and Validation
 
-In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the model’s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
-- _Is the final model reasonable and aligning with solution expectations? Are the final parameters of the model appropriate?_
-- _Has the final model been tested with various inputs to evaluate whether the model generalizes well to unseen data?_
-- _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
-- _Can results found from the model be trusted?_
+Two separate techniques were used, both utilizing the same training-test split, both utilizing the same F10 Scorer, and both utilizing a 5-fold cross-fold validation mechanism when doing gridsearch.
+
+<center>
+
+| Model                |  F10 Cross-Fold Score  | F10 Best Score   |
+|----------------------|----------------------------:|----------------------:|
+| Logistic Regression  |       0.612                 |        0.609          |
+| Decision Tree        |       0.620                 |        0.633          |
+
+</center>
+
+The following image is the generated Decision Tree that is used to classify vulnerabilities based on CVSS attributes as either 'exploit' or 'benign'.  
+
+![Decision Tree](img/dt.png)
+
+Following some of the strongest 'exploit' branches you can see that some characteristics from the previous graphs are indicative of an exploitable vulnerability.
+
+* Network Access
+* High Confidentiality
+* No Authentication
+* High Integrity
+* Low Authentication
+
+As observed in the original data analyzed in Section II: Analysis, these are all qualities of vulnerabilities that have exploits.  It seems to reason that they would be useful when making a prediction on future exploits.
 
 ### Justification
 
-In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
-- _Are the final results found stronger than the benchmark result reported earlier?_
-- _Have you thoroughly analyzed and discussed the final solution?_
-- _Is the final solution significant enough to have solved the problem?_
+The most naïve approach would have been to label every vulnerability as benign and achieve an accuracy of **98%**, however this resulted in a recall of **0** and is not a useful predictor.  Opposite of that, labeling every vulnerability as an exploit would have had amazing recall at **1.0** but with an accuracy rate of **1.6%**.  
 
+The simplest approach tested was the Logistic Regression model.  This produced a test accuracy of **58%** with  a recall of **0.59** considerably better than our naïve approaches.
+
+Moving onto a more sophisticated, but still interpretable model, the Decision Tree produced a model with a test accuracy of **57%** and a recall of **0.57**.  By all practical measures one would think that the Logistic Regression model was superior, however our models were scored based on a F10 Scorer.
+
+The test data on the Logistic Regression model resulted in an F10-Score of **0.609** while the Decision Tree on the same test data produced an F10-Score of **0.627**.  While not appreciably larger, it is an increase that may produce more accurate results.
+
+By both of our benchmark results, the Decision Tree did produce superior results and strong enough to be usable in industry.  Taking into account the explainability of the model, providing justification for capital expenditures to patch the vulnerabilities proposed in this model can be made.
 
 ## V. Conclusion
 
-_(approx. 1-2 pages)_
-
 ### Free-Form Visualization
 
-In this section, you will need to provide some form of visualization that emphasizes an important quality about the project. It is much more free-form, but should reasonably support a significant result or characteristic about the problem that you want to discuss. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant or important quality about the problem, dataset, input data, or results?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
+Designing and training a Decision Tree classifier to predict whether a vulnerability will turn into an exploit based on CVSS attributes produced the following graphical representation.
+
+![Decision Tree](img/dt.png)
+
+Following the logic of the tree, it is apparent that the key indicators present in the raw data, such as Access (Network), Confidentiality (High), Authentication (Low/No), and Integrity (High) are all important in determining if a vulnerability will be turned into an exploit.
 
 ### Reflection
 
-In this section, you will summarize the entire end-to-end problem solution and discuss one or two particular aspects of the project you found interesting or difficult. You are expected to reflect on the project as a whole to show that you have a firm understanding of the entire process employed in your work. Questions to ask yourself when writing this section:
-- _Have you thoroughly summarized the entire process you used for this project?_
-- _Were there any interesting aspects of the project?_
-- _Were there any difficult aspects of the project?_
-- _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
+This project began with the hypothesis that the CVSS attributes found on CVEs could be used to predict whether a CVE would eventually be found in the Metasploit Database.  This prediction will allow Systems and Information Technology Administrators the ability to prioritize which computer systems get patched when, and how quickly.  There are thousands of new vulnerabilities discovered annually, which present a problem to those responsible for patching and ensuring the safety of the networks.
+
+The structured natures of the CVE entries made data parsing trivial.  They were stored as arrays of JSON and easily parsed.  The most difficult part was found in the mapping of the CVSS attributes Version 2 and Version 3.  The vast majority of attributes were V2, however those with V3 attributes were potentially better categorized and I wanted to make sure those more modern characterizations were captured in the model.
+
+Metasploit provided an easy to parse data structure as well.  Each Metasploit entry was parsed and if it contained a CVE Identifier, that CVE's __metasploit__ column was set to a **1** to indicate that an exploit was available for that CVE.
+
+During conception it was hypothesized that the date a vulnerability was published and the date that an exploit was added to Metasploit would be a useful feature.  This proved false as it was discovered that most exploits had a published date that was prior to the vulnerabilities published date.  This is still puzzling, but one thought is that an exploit was updated to attack newer vulnerabilities but there are no mechanisms in the Metasploit database to indicate this.  As such, this potential feature was abandoned.
+
+Once all of the data was properly merged into a single dataframe, the individual CVSS attributes were one-hot encoded to make classification possible.
+
+Then a baseline Linear Regression was ran to determine what kind of unrefined regression could be found.  Using this logit method, various forms of F-Beta Scoring were graphed to gauge how strongly each one weighed precision and recall.  An F10 Score was chosen.
+
+Hyperparameter tuning was then employed for both the Logistic Regression model and a Decision Tree, both scored using the previous F10 Score.  This produced the following scores:
+
+<center>
+
+| Model                | F10 Best Score   |
+|----------------------|----------------------:|
+| Logistic Regression  |        0.609          |
+| Decision Tree        |        0.633          |
+
+</center>
+
+While not drastically better, the Decision Tree did produce slightly higher results when measured using the F10 Score.  Following the branches on the Decision Tree follows intuition from the original data analysis.
 
 ### Improvement
 
-In this section, you will need to provide discussion as to how one aspect of the implementation you designed could be improved. As an example, consider ways your implementation can be made more general, and what would need to be modified. You do not need to make this improvement, but the potential solutions resulting from these changes are considered and compared/contrasted to your current solution. Questions to ask yourself when writing this section:
-- _Are there further improvements that could be made on the algorithms or techniques you used in this project?_
-- _Were there algorithms or techniques you researched that you did not know how to implement, but would consider using if you knew how?_
-- _If you used your final solution as the new benchmark, do you think an even better solution exists?_
+Improvements to any method are often available.  If one were willing to give up some model explainability, then more __flexible__ models could be employed, such as Support Vector Machines or Random Forests.
 
-### Future Work
+In addition, incorporating additional data, such as Common Platform Enumerations, which may indicate that some platforms are more likely to have exploits generated for them, can be added to the model.  
 
-CPEs,
-exploit-cpe lag publish
------------
-
-**Before submitting, ask yourself. . .**
-
-- Does the project report you’ve written follow a well-organized structure similar to that of the project template?
-- Is each section (particularly **Analysis** and **Methodology**) written in a clear, concise and specific fashion? Are there any ambiguous terms or phrases that need clarification?
-- Would the intended audience of your project be able to understand your analysis, methods, and results?
-- Have you properly proof-read your project report to assure there are minimal grammatical and spelling mistakes?
-- Are all the resources used for this project correctly cited and referenced?
-- Is the code that implements your solution easily readable and properly commented?
-- Does the code execute without error and produce results similar to those reported?
+There's some additional work that may take the CVE and Metasploit dates into account, if one could determine a proper delay between vulnerability published and exploit published.
