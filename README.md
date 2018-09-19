@@ -3,7 +3,7 @@ Udacity Machine Learning Nano Degree Capstone Project
 
 This project is separated into 3 directories
 
-* doc - proposal, report, and all associated images
+* docs - proposal, report, and all associated images
 * code - all code, including data_prep and model
 * data - both raw and processed data
 
