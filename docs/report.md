@@ -134,7 +134,23 @@ There are many machine-learning techniques available to this problem.  Before de
 * Biased Data: have a 60:1 in favor of negative training cases
 * Explainable: when spending money, it's best to have explainable predictions
 
-In the realm of simplest, categorical predictive, and explainable, **Logistic Regression** will be the first algorithm employed, initially as a baseline and then with hyperparameter tuning.  Next a Decision Tree will be tuned and hopefully produce higher accuracy than the Logistic Regression method.  A Decision Tree was chosen due to it's level of explainability and flexibility.  Once trained, the branching nodes can be examined to help understand which aspects of CVSS attributes lead to potential exploits.
+In the realm of simplest, categorical predictive, and explainable, **Logistic Regression** will be the first algorithm employed, initially as a baseline and then with hyperparameter tuning.  Logistic Regression is best described as Linear Regression where the output is ran through a sigmoid function, converting it to a 0.0-1.0 value, which is then 'binned' so that values between ranges within the 0.0-1.0 indicate which category should be predicted.  To unwind that a bit, Linear Regression is best visualized in two dimensions.  The following image [By Sewaqu - Own work, Public Domain](https://commons.wikimedia.org/w/index.php?curid=11967659) provides a good representation for a 2D scatter plot and a best-fit line.
+
+![Linear Regression Example](img/Linear_regression.jpg)
+
+The idea here, is that the closed-form expression of this **red** line is a good representation for any data points that are not sampled yet.  It's obvious from looking at the graph that the linear line does not fit all of the data points, for any given __x__ entered into the linear equation it appears as if only **3** __y__ values are correct.  The __y__ distance from the line to each sample point is the residual.  The standard deviation of the residuals is the error that is minimized when trying to find the best-fit linear model to a collection of points.  
+
+The process of linear regression starts by trying to 'guess' a linear model, calculate the error by taking the standard deviation of the residuals, and then using gradient decent, attempts to move the line around minimizing the error.  There is a closed-form solution, but it requires very extensive computing power and is not as practical as using gradient decent.  This same process can work for three dimensions and a plane instead of a line, and 4+ dimensions with a hyper plane.  
+
+The output of Linear Regression is a number, (-INF, INF), by running this through a sigmoid or logistic curve the values change from [0-1] and a default threshold of 0.5 for a binary classifier would output a 0 for any values between [0-0.5] and a 1 for any values between (0.5-1]
+
+![Logistic Curve](img/Logistic-curve.jpg)
+
+Image courtesy of [Qef (talk) - Created from scratch with gnuplot, Public Domain](https://commons.wikimedia.org/w/index.php?curid=4310325)
+
+After the Logistic Regression model is fitted a Decision Tree will be tuned and hopefully produce higher accuracy than the Logistic Regression method.  A Decision Tree was chosen due to it's level of explainability and flexibility.  Once trained, the branching nodes can be examined to help understand which aspects of CVSS attributes lead to potential exploits.
+
+A Decision Tree is fitted by splitting the training dataset on each feature and calculating the __entropy__ that each feature provides.  The feature with the highest entropy becomes a decision node and the tree splits.  The algorithm continues splitting each split until there are no more items in each node (configurable) or a specific depth has been reached (also configurable).  Entropy is calculated by taking the negative of the log(2) of the probabilities of each outcome multiplied together.  Essentially entropy is trying to determine for each feature we split on, which will provide the most variability.
 
 For each method hyperparameters will be tuned using GridSearchCV.  Weighting will be **balanced** when appropriate, which will aid with the biased dataset (60:1 negative:positive).
 
@@ -222,11 +238,23 @@ The same modifications/one-hot-encoding was performed on the data for all of the
 
 ### Implementation
 
-For the modelling portion of this project, a separate notebook was constructed for both algorithms employed.  The dataset was read in as a __pandas__ dataframe and and sklearn's **train_test_split** employed to get a training and test dataset.  GridSearch parameters were constructed as mentioned in the previous section.  Cross-Validation was used with a fold of 5 and using the F-Beta10 scorer that was constructed using **make_scorer**.
+For the modelling portion of this project, a separate notebook was constructed for both algorithms employed.  Then the dataset was read in as a pandas array and inspected for accuracy and proper one-hot encoding.
 
-![Decision Tree Code Snippit](img/dt_run.png)
+![Read into Pandas](img/impl1.png)
 
-As one can observe in the above snippit, the coding portion was rather trivial and to the point.  Such is the benefit of modern sklern libraries.
+Next the train and test sets were constructed using sklearn's **train_test_split** function.  To ensure a proper representation of positive test cases between the training and test sets the means were compared.  With Test=**0.0158** and Train=**0.0160** which are adequately close.
+
+![Train/Test Split](img/impl2.png)
+
+Next parameter grids and each respective model were constructed.
+
+![Logistic Regression Parameter Grid](img/lr_param_model.png)
+Logistic Regression params and model
+
+![Decision Tree Parameter Grid](img/dt_param_model.png)
+Decision Tree params and model.
+
+Finally the F10 Scorer was constructed as well as a __GridSearchCV__ passing in the previously created model, scorer, and setting the cross fold validation to 5 folds.
 
 ### Refinement
 
@@ -246,6 +274,8 @@ Two separate techniques were used, both utilizing the same training-test split, 
 | Decision Tree        |       0.620                 |        0.633          |
 
 </center>
+
+The models were trained using Cross-Fold (n=5) validation with a hold-out training set.  Training accuracy was **58%** and the testing accuracy **57%**, a decrease of only **1%**.  Additionally, the F10 Score for training was **0.62** and for our out-of-sample test was **0.61**.  This is a good indication that our model is robust and is not overfitting the training data.  If however our training score was much higher than our testing score we may determine that the model was overfitting.
 
 The following image is the generated Decision Tree that is used to classify vulnerabilities based on CVSS attributes as either 'exploit' or 'benign'.  
 
