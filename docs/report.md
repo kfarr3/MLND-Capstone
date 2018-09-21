@@ -200,7 +200,7 @@ It's interesting that all forms of the F-Beta Score dropped off around 5.5 and 7
 
 Our incoming data required little pre-processing.  The 6 features were all categorical without any missing data, a rarity.  Essentially the only preprocessing required was extracting the features from the JSON object, organizing them in a dataframe, and performing one-hot encoding such that each of the 'string' based categorical values were transformed into binary indicators.
 
-When extracting the CVEs, there was some mapping done between CVSS v2 and CVSS v3 to ensure that they aligned as closely as possible.  While it would have been possible to utilize the V2 Scoring for everything, it was felt that the V3 scores were of a higher caliber, even when mapped to V2 terminology.
+When extracting the CVEs, the only complication was mapping between CVSS v2 and CVSS v3 to ensure that they aligned as closely as possible.  While it would have been possible to utilize the V2 Scoring for everything, it was felt that the V3 scores were of a higher caliber, even when mapped to V2 terminology.  In most cases V2 was mapped to V3 since there were fewer categories for V3 and data compression was easier than guessing at an expansion.  However for the __Access__ variable we mapped from V3 to V2 since V3 added the **PHYSICAL** value and we know from initial analysis that both **LOCAL** and **PHYSICAL** are similar in regard to exploited vulnerabilities.
 
 The following tables outline the mappings that occurred
 
@@ -303,6 +303,23 @@ The test data on the Logistic Regression model resulted in an F10-Score of **0.6
 
 By both of our benchmark results, the Decision Tree did produce superior results and strong enough to be usable in industry.  Taking into account the explainability of the model, providing justification for capital expenditures to patch the vulnerabilities proposed in this model can be made.
 
+To test the robustness of the Decision Tree, a 10-fold cross-validation was done using all sample points which produced the following table.
+
+| Accuracy    |
+|-------------|
+| 0.6317545   |
+| 0.56447155  |
+| 0.44305728  |
+| 0.4676451   |
+| 0.55894406  |
+| 0.61155056  |
+| 0.67892881  |
+| 0.59921845  |
+| 0.697169    |
+| 0.63158898  |
+
+This produced an mean accuracy of 0.59 (+/- 0.16).  This may indicate that this model is not as robust as one with a lower variance.
+
 ## V. Conclusion
 
 ### Free-Form Visualization
@@ -347,3 +364,5 @@ Improvements to any method are often available.  If one were willing to give up 
 In addition, incorporating additional data, such as Common Platform Enumerations, which may indicate that some platforms are more likely to have exploits generated for them, can be added to the model.  
 
 There's some additional work that may take the CVE and Metasploit dates into account, if one could determine a proper delay between vulnerability published and exploit published.
+
+Additionally, the 10-fold cross-validation mean has a somewhat high variance at **16%** which may indicate that there is some over-fitting.  It would be interesting to check the robustness of models with limited depth or other limiting factors that may help generalize the model.
